@@ -1,0 +1,6 @@
+# Precompiled Headers and Objects
+*.gch
+*.pch
+*.o
+
+TVMA
