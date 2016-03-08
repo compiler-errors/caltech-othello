@@ -57,10 +57,7 @@ Move Player::testMoves(vector<Move> moves)
     {
         Board *copy = board->copy();
         copy->doMove(&moves[i], side);
-
-        //vector
-
-        scores.push_back(copy->count(side));
+        scores.push_back(copy->score(side));
         delete copy;
     }
 

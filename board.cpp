@@ -181,6 +181,56 @@ int Board::countWhite() {
 }
 
 /*
+ * Determines the number of occupied spaces that are corners (very good, x5),
+ * edges (good, x2), adjacent to corners (bad, x(-2)), and diagonal to corners
+ * (very bad, x(-5)). These modifiers are applied to compute the final score of
+ * a position.
+ */
+int Board::score(Side side)
+{
+    // number of occupied corners
+    int corn = 0;
+    corn += get(side, 0, 0);
+    corn += get(side, 0, 7);
+    corn += get(side, 7, 0);
+    corn += get(side, 7, 7);
+
+    // number of occupied edge spots (not adjacent to corners)
+    int edge = 0;
+    for (int i = 2; i < 6; i++)
+    {
+        edge += get(side, 0, i);
+        edge += get(side, i, 0);
+        edge += get(side, 7, i);
+        edge += get(side, i, 7);
+    }
+    
+    // number of occupied spots diagonal to corners
+    int d_corn = 0;
+    d_corn += get(side, 1, 1);
+    d_corn += get(side, 1, 6);
+    d_corn += get(side, 6, 1);
+    d_corn += get(side, 6, 6);
+
+    // number of occupied spots adjacent to corners
+    int adj_corn = 0;
+    adj_corn += get(side, 0, 1);
+    adj_corn += get(side, 0, 6);
+    adj_corn += get(side, 1, 0);
+    adj_corn += get(side, 1, 7);
+    adj_corn += get(side, 6, 0);
+    adj_corn += get(side, 6, 7);
+    adj_corn += get(side, 7, 1);
+    adj_corn += get(side, 7, 6);
+
+    // multipliers are 3 & 1 for good and 5 & 3 for bad to account for +1x
+    // already in count
+    int good = 4 * corn + edge;
+    int bad = 6 * d_corn + 3 * adj_corn;
+    return count(side) + good - bad;
+}
+
+/*
  * Sets the board state given an 8x8 char array where 'w' indicates a white
  * piece and 'b' indicates a black piece. Mainly for testing purposes.
  */
