@@ -3,19 +3,18 @@
 
 #include <vector>
 #include <cstdint>
+#include <climits>
 
 enum Side {
     WHITE, BLACK
 };
 
 class Move {
-    uint8_t x, y;
+    int8_t x, y;
 public:
-    Move(int x, int y) {
-        this->x = x;
-        this->y = y;
-    }
-    ~Move() {}
+    Move(int x, int y) : x(x), y(y) {};
+    Move(const Move&) = default;
+    ~Move() = default;
 
     inline int getX() { return x; }
     inline int getY() { return y; }

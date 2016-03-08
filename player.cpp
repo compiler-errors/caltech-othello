@@ -35,37 +35,38 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         board->doMove(opponentsMove, opponentSide);
     }
 
-    vector<Move> moves = board->getMoves(side);
-    if (moves.size() == 0)
-        return nullptr;
-
-    Move best = testMoves(moves);
+    Move best = getBestMove();
     board->doMove(&best, side);
-    Move *move = new Move(best.getX(), best.getY());
+    Move *move = new Move(best);
+
     return move;
 }
 
 /*
  * Tests all moves legal for present state and returns the optimal one.
  */
-Move Player::testMoves(vector<Move> moves)
+Move Player::getBestMove()
 {
-    int best = 0;
-    vector<int> scores;
+    int bestScore = INT_MIN; //Lowest possible score ever.
+    Move bestMove(-1, -1); //Representing the move of "do nothing."
 
-    for (unsigned int i = 0; i < moves.size(); i++)
-    {
-        Board *copy = board->copy();
-        copy->doMove(&moves[i], side);
-        scores.push_back(copy->score(side));
-        delete copy;
+    for (int x = 0; x < 8; x++) {
+        for (int y = 0; y < 8; y++) {
+            Move move(x, y);
+
+            if (!board->checkMove(&move, side))
+                continue;
+
+            Board* copy = board->copyDoMove(&move, side);
+            int score = copy->score(side);
+            delete copy;
+
+            if (score > bestScore) {
+                bestMove = move;
+                bestScore = score;
+            }
+        }
     }
 
-    for (unsigned int i = 0; i < scores.size(); i++)
-    {
-            if (scores[i] > scores[best])
-            best = i;
-    }
-
-    return moves[best];
+    return bestMove;
 }
