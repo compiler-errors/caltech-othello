@@ -35,10 +35,40 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         board->doMove(opponentsMove, opponentSide);
     }
 
-    vector<Move*> moves = board->getMoves(side);
-
+    vector<Move> moves = board->getMoves(side);
     if (moves.size() == 0)
         return nullptr;
-    board->doMove(moves[0], side);
-    return moves[0];
+
+    Move best = testMoves(moves);
+    board->doMove(&best, side);
+    Move *move = new Move(best.getX(), best.getY());
+    return move;
+}
+
+/*
+ * Tests all moves legal for present state and returns the optimal one.
+ */
+Move Player::testMoves(vector<Move> moves)
+{
+    int best = 0;
+    vector<int> scores;
+
+    for (unsigned int i = 0; i < moves.size(); i++)
+    {
+        Board *copy = board->copy();
+        copy->doMove(&moves[i], side);
+
+        //vector
+
+        scores.push_back(copy->count(side));
+        delete copy;
+    }
+
+    for (unsigned int i = 0; i < scores.size(); i++)
+    {
+            if (scores[i] > scores[best])
+            best = i;
+    }
+
+    return moves[best];
 }
