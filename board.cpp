@@ -248,7 +248,7 @@ int Board::score(Side side)
         edge += get(side, 7, i);
         edge += get(side, i, 7);
     }
-    
+
     // number of occupied spots diagonal to corners
     int d_corn = 0;
     d_corn += get(side, 1, 1);
