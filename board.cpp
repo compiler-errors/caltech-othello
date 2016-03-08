@@ -223,7 +223,7 @@ int Board::score(Side side)
     adj_corn += get(side, 7, 1);
     adj_corn += get(side, 7, 6);
 
-    // multipliers are 3 & 1 for good and 5 & 3 for bad to account for +1x
+    // multipliers are 4 & 1 for good and 6 & 3 for bad to account for +1x
     // already in count
     int good = 4 * corn + edge;
     int bad = 6 * d_corn + 3 * adj_corn;
