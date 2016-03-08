@@ -102,14 +102,14 @@ bool Board::checkMove(Move *m, Side side) {
 }
 
 /*
- * Returns a list of possible legal moves for the current board state.
+ * Returns a vector of possible legal moves for the current board state.
  */
-vector<Move> getMoves(Side side)
+vector<Move> Board::getMoves(Side side)
 {
     vector<Move> ret;
-    for (int i = 0; i < 8; i++)
+    for (int x = 0; x < 8; x++)
     {
-        for (int j = 0; j < 8; j++)
+        for (int y = 0; y < 8; y++)
         {
             Move move(x,y);
             if (checkMove(&move, side))

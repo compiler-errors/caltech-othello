@@ -35,9 +35,9 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
         board->doMove(opponentsMove, opponentSide);
     }
 
-    vector<Move> moves = board.getMoves(side);
+    vector<Move> moves = board->getMoves(side);
     if (moves.size() == 0)
         return nullptr;
 
-    return moves[0];
+    return &moves[0];
 }
