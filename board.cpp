@@ -1,21 +1,40 @@
 #include "board.h"
+#include <iostream>
+using std::cerr;
+
+//Functions thanks to:
+//http://www.gamedev.net/topic/646988-generating-moves-in-reversi/
+constexpr uint64_t NORTH(uint64_t x) { return (x << 8); }
+constexpr uint64_t SOUTH(uint64_t x) { return (x >> 8); }
+constexpr uint64_t EAST(uint64_t x) { return ((x & 0xfefefefefefefefeull) >> 1); }
+constexpr uint64_t WEST(uint64_t x) { return ((x & 0x7f7f7f7f7f7f7f7full) << 1); }
+constexpr uint64_t NOREAST(uint64_t x) { return NORTH(EAST(x)); }
+constexpr uint64_t SOUEAST(uint64_t x) { return SOUTH(EAST(x)); }
+constexpr uint64_t NORWEST(uint64_t x) { return NORTH(WEST(x)); }
+constexpr uint64_t SOUWEST(uint64_t x) { return SOUTH(WEST(x)); }
 
 /*
- * Make a standard 8x8 othello board and initialize it to the standard setup.
+ * Generates possible moves for pieces of the bitboard 'own' in the direction
+ * given by the function pointer shift().
+ * My hope here is that GCC will inline the function pointer and essentially
+ * unroll all 8 calls to generateMove() for each direction
  */
-Board::Board() {
-    taken.set(3 + 8 * 3);
-    taken.set(3 + 8 * 4);
-    taken.set(4 + 8 * 3);
-    taken.set(4 + 8 * 4);
-    black.set(4 + 8 * 3);
-    black.set(3 + 8 * 4);
+inline uint64_t generateMove(uint64_t(*shift)(uint64_t), uint64_t own, uint64_t other) {
+    uint64_t empty = ~(own | other); //Bitboard with '1' at empty pieces.
+    //Possible stores the possible (well, adjacent-to-possible) moves.
+    uint64_t possible = shift(own) & other; //Move the piece 1 step
+    possible |= (shift(possible) & other); //Move the piece 2 steps
+    possible |= (shift(possible) & other); //3
+    possible |= (shift(possible) & other); //4
+    possible |= (shift(possible) & other); //5
+    possible |= (shift(possible) & other); //6
+    //We don't need to go on any longer, since we would be running off the board
+    return shift(possible) & empty; //now which adjacent pieces are empty?
 }
 
-/*
- * Destructor for the board.
- */
-Board::~Board() {
+/* Returns a bitboard with a single 1 at position (x, y) */
+constexpr uint64_t getSinglePosition(int x, int y) {
+    return (0x8000000000000000ull >> (8 * y)) >> x;
 }
 
 /*
@@ -24,30 +43,53 @@ Board::~Board() {
 Board *Board::copy() {
     Board *newBoard = new Board();
     newBoard->black = black;
-    newBoard->taken = taken;
+    newBoard->white = white;
+    newBoard->black_moves = black_moves;
+    newBoard->white_moves = white_moves;
+    return newBoard;
+}
+
+Board* Board::copyDoMove(Move* m, Side side) {
+    Board* newBoard = copy();
+    newBoard->doMove(m, side);
     return newBoard;
 }
 
 bool Board::occupied(int x, int y) {
-    return taken[x + 8*y];
+    return get(WHITE, x, y) || get(BLACK, x, y);
 }
 
 bool Board::get(Side side, int x, int y) {
-    return occupied(x, y) && (black[x + 8*y] == (side == BLACK));
+    return (side == BLACK ? black : white) & getSinglePosition(x, y);
 }
 
 void Board::set(Side side, int x, int y) {
-    taken.set(x + 8*y);
-    black.set(x + 8*y, side == BLACK);
+    (side == BLACK ? black : white) |= getSinglePosition(x, y);
 }
 
-bool Board::onBoard(int x, int y) {
-    return(0 <= x && x < 8 && 0 <= y && y < 8);
+void Board::generateMoves() {
+    //Generate black moves first:
+    black_moves = generateMove(NORTH, black, white)
+                | generateMove(SOUTH, black, white)
+                | generateMove(EAST, black, white)
+                | generateMove(WEST, black, white)
+                | generateMove(NOREAST, black, white)
+                | generateMove(SOUEAST, black, white)
+                | generateMove(NORWEST, black, white)
+                | generateMove(SOUWEST, black, white);
+
+    white_moves = generateMove(NORTH, white, black)
+                | generateMove(SOUTH, white, black)
+                | generateMove(EAST, white, black)
+                | generateMove(WEST, white, black)
+                | generateMove(NOREAST, white, black)
+                | generateMove(SOUEAST, white, black)
+                | generateMove(NORWEST, white, black)
+                | generateMove(SOUWEST, white, black);
 }
 
- 
 /*
- * Returns true if the game is finished; false otherwise. The game is finished 
+ * Returns true if the game is finished; false otherwise. The game is finished
  * if neither side has a legal move.
  */
 bool Board::isDone() {
@@ -58,47 +100,35 @@ bool Board::isDone() {
  * Returns true if there are legal moves for the given side.
  */
 bool Board::hasMoves(Side side) {
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            Move move(i, j);
-            if (checkMove(&move, side)) return true;
-        }
-    }
-    return false;
+    return (side == BLACK ? black_moves : white_moves) != 0;
 }
 
 /*
  * Returns true if a move is legal for the given side; false otherwise.
  */
 bool Board::checkMove(Move *m, Side side) {
-    // Passing is only legal if you have no moves.
-    if (m == NULL) return !hasMoves(side);
+    return (getSinglePosition(m->getX(), m->getY()) & (side == BLACK ? black_moves : white_moves)) != 0;
+}
 
-    int X = m->getX();
-    int Y = m->getY();
+/* Carries out a move in a specific direction */
+uint64_t Board::doDirection(int x, int y, Side side, uint64_t(*shift)(uint64_t)) {
+    uint64_t m = getSinglePosition(x, y);
+    uint64_t changed = m;
+    uint64_t otherBoard = (side == BLACK ? white : black);
+    uint64_t ourBoard = (side == BLACK ? black : white);
 
-    // Make sure the square hasn't already been taken.
-    if (occupied(X, Y)) return false;
+    //Keep shifting 'm' until we are no longer over a white piece
+    //tracking the change on "changed".
+    while ((m = shift(m)) & otherBoard)
+        changed |= m;
 
-    Side other = (side == BLACK) ? WHITE : BLACK;
-    for (int dx = -1; dx <= 1; dx++) {
-        for (int dy = -1; dy <= 1; dy++) {
-            if (dy == 0 && dx == 0) continue;
-
-            // Is there a capture in that direction?
-            int x = X + dx;
-            int y = Y + dy;
-            if (onBoard(x, y) && get(other, x, y)) {
-                do {
-                    x += dx;
-                    y += dy;
-                } while (onBoard(x, y) && get(other, x, y));
-
-                if (onBoard(x, y) && get(side, x, y)) return true;
-            }
-        }
+    //If the next piece in that direction is on our board,
+    //then return all the changed pieces.
+    if (m & ourBoard) {
+        return changed;
     }
-    return false;
+
+    return 0;
 }
 
 /*
@@ -122,41 +152,39 @@ vector<Move> Board::getMoves(Side side)
 /*
  * Modifies the board to reflect the specified move.
  */
-void Board::doMove(Move *m, Side side) {
-    // A NULL move means pass.
-    if (m == NULL) return;
+bool Board::doMove(Move* m, Side side) {
+    // Passing is only legal if you have no moves.
+    if (m == nullptr) return !hasMoves(side);
 
-    // Ignore if move is invalid.
-    if (!checkMove(m, side)) return;
+    int x = m->getX();
+    int y = m->getY();
 
-    int X = m->getX();
-    int Y = m->getY();
-    Side other = (side == BLACK) ? WHITE : BLACK;
-    for (int dx = -1; dx <= 1; dx++) {
-        for (int dy = -1; dy <= 1; dy++) {
-            if (dy == 0 && dx == 0) continue;
+    // Make sure the move is correct.
+    if (!checkMove(m, side))
+        return false;
 
-            int x = X;
-            int y = Y;
-            do {
-                x += dx;
-                y += dy;
-            } while (onBoard(x, y) && get(other, x, y));
+    //newBoard is essentially the bitmap of pieces which have changed hands.
+    uint64_t newBoard = doDirection(x, y, side, NORTH);
+    newBoard |= doDirection(x, y, side, SOUTH);
+    newBoard |= doDirection(x, y, side, EAST);
+    newBoard |= doDirection(x, y, side, WEST);
+    newBoard |= doDirection(x, y, side, NOREAST);
+    newBoard |= doDirection(x, y, side, NORWEST);
+    newBoard |= doDirection(x, y, side, SOUEAST);
+    newBoard |= doDirection(x, y, side, SOUWEST);
 
-            if (onBoard(x, y) && get(side, x, y)) {
-                x = X;
-                y = Y;
-                x += dx;
-                y += dy;
-                while (onBoard(x, y) && get(other, x, y)) {
-                    set(side, x, y);
-                    x += dx;
-                    y += dy;
-                }
-            }
-        }
-    }
-    set(side, X, Y);
+    if (newBoard == 0)
+        return false;
+
+    //We apply it to the board that receives the new pieces
+    (side == BLACK ? black : white) |= newBoard;
+    //And then we can do a sanity check and "un-apply" them from the other.
+    (side == BLACK ? white : black) &= ~(side == BLACK ? black : white);
+
+    set(side, x, y);
+    generateMoves();
+
+    return true;
 }
 
 /*
@@ -170,14 +198,30 @@ int Board::count(Side side) {
  * Current count of black stones.
  */
 int Board::countBlack() {
-    return black.count();
+    uint64_t board = black;
+
+    int count = 0;
+    while (board) {
+        count += board & 1;
+        board >>= 1;
+    }
+
+    return count;
 }
 
 /*
  * Current count of white stones.
  */
 int Board::countWhite() {
-    return taken.count() - black.count();
+    uint64_t board = white;
+
+    int count = 0;
+    while (board) {
+        count += board & 1;
+        board >>= 1;
+    }
+
+    return count;
 }
 
 /*
@@ -235,14 +279,13 @@ int Board::score(Side side)
  * piece and 'b' indicates a black piece. Mainly for testing purposes.
  */
 void Board::setBoard(char data[]) {
-    taken.reset();
-    black.reset();
     for (int i = 0; i < 64; i++) {
         if (data[i] == 'b') {
-            taken.set(i);
-            black.set(i);
+            set(BLACK, i / 8, i % 8);
         } if (data[i] == 'w') {
-            taken.set(i);
+            set(WHITE, i / 8, i % 8);
         }
     }
+
+    generateMoves();
 }
