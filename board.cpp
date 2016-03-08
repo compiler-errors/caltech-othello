@@ -1,6 +1,4 @@
 #include "board.h"
-#include <iostream>
-using std::cerr;
 
 //Functions thanks to:
 //http://www.gamedev.net/topic/646988-generating-moves-in-reversi/
