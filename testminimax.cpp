@@ -11,24 +11,24 @@ int main(int argc, char *argv[]) {
     // this, but it's provided for convenience.
     char boardData[64] = {
         ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-        ' ', ' ', ' ', ' ', ' ', ' ', 'w', ' ',
-        ' ', ' ', ' ', ' ', ' ', 'w', ' ', 'b',
-        ' ', ' ', ' ', 'w', 'w', 'b', 'b', ' ',
-        ' ', ' ', ' ', 'b', 'w', 'b', ' ', ' ',
-        ' ', ' ', 'b', 'b', 'b', 'b', 'b', 'b',
-        ' ', ' ', 'w', 'b', ' ', ' ', ' ', ' ',
-        ' ', 'w', ' ', 'b', ' ', ' ', ' ', ' '
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 
+        ' ', 'b', ' ', ' ', ' ', ' ', ' ', ' ', 
+        'b', 'w', 'b', 'b', 'b', 'b', ' ', ' ', 
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '
     };
     Board *board = new Board();
     board->setBoard(boardData);
 
     // Initialize player as the white player, and set testing_minimax flag.
-    Player *player = new Player(BLACK);
+    Player *player = new Player(WHITE);
     player->testingMinimax = true;
-    player->board = board;
 
-    /**
-     * TODO: Write code to set your player's internal board state to the
+
+    /** 
+     * TODO: Write code to set your player's internal board state to the 
      * example state.
      */
 
