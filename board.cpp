@@ -2,14 +2,14 @@
 
 //Functions thanks to:
 //http://www.gamedev.net/topic/646988-generating-moves-in-reversi/
-constexpr uint64_t NORTH(uint64_t x) { return (x << 8); }
-constexpr uint64_t SOUTH(uint64_t x) { return (x >> 8); }
-constexpr uint64_t EAST(uint64_t x) { return ((x & 0xfefefefefefefefeull) >> 1); }
-constexpr uint64_t WEST(uint64_t x) { return ((x & 0x7f7f7f7f7f7f7f7full) << 1); }
-constexpr uint64_t NOREAST(uint64_t x) { return NORTH(EAST(x)); }
-constexpr uint64_t SOUEAST(uint64_t x) { return SOUTH(EAST(x)); }
-constexpr uint64_t NORWEST(uint64_t x) { return NORTH(WEST(x)); }
-constexpr uint64_t SOUWEST(uint64_t x) { return SOUTH(WEST(x)); }
+inline constexpr uint64_t NORTH(uint64_t x) { return (x << 8); }
+inline constexpr uint64_t SOUTH(uint64_t x) { return (x >> 8); }
+inline constexpr uint64_t EAST(uint64_t x) { return ((x & 0xfefefefefefefefeull) >> 1); }
+inline constexpr uint64_t WEST(uint64_t x) { return ((x & 0x7f7f7f7f7f7f7f7full) << 1); }
+inline constexpr uint64_t NOREAST(uint64_t x) { return NORTH(EAST(x)); }
+inline constexpr uint64_t SOUEAST(uint64_t x) { return SOUTH(EAST(x)); }
+inline constexpr uint64_t NORWEST(uint64_t x) { return NORTH(WEST(x)); }
+inline constexpr uint64_t SOUWEST(uint64_t x) { return SOUTH(WEST(x)); }
 
 /*
  * Generates possible moves for pieces of the bitboard 'own' in the direction
@@ -31,7 +31,7 @@ inline uint64_t generateMove(uint64_t(*shift)(uint64_t), uint64_t own, uint64_t 
 }
 
 /* Returns a bitboard with a single 1 at position (x, y) */
-constexpr uint64_t getSinglePosition(int x, int y) {
+inline constexpr uint64_t getSinglePosition(int x, int y) {
     return (0x8000000000000000ull >> (8 * y)) >> x;
 }
 
@@ -39,12 +39,7 @@ constexpr uint64_t getSinglePosition(int x, int y) {
  * Returns a copy of this board.
  */
 Board *Board::copy() {
-    Board *newBoard = new Board();
-    newBoard->black = black;
-    newBoard->white = white;
-    newBoard->black_moves = black_moves;
-    newBoard->white_moves = white_moves;
-    return newBoard;
+    return new Board(*this);
 }
 
 Board* Board::copyDoMove(Move* m, Side side) {
@@ -200,7 +195,7 @@ int Board::countBlack() {
 
     int count = 0;
     while (board) {
-        count += board & 1;
+        count += (board & 1);
         board >>= 1;
     }
 
@@ -215,7 +210,7 @@ int Board::countWhite() {
 
     int count = 0;
     while (board) {
-        count += board & 1;
+        count += (board & 1);
         board >>= 1;
     }
 
@@ -225,6 +220,7 @@ int Board::countWhite() {
 /*
  * This matrix essentially represents the score of owning this position.
  */
+
 
 int heuristicMatrix[8][8] =
 {{ 5,-2, 2, 2, 2, 2,-2, 5 },
@@ -244,6 +240,8 @@ int heuristicMatrix[8][8] =
  */
 int Board::score(Side side)
 {
+    //TODO: We should have a bad heuristic for "losing"
+
     int score = 0;
 
     for (int x = 0; x < 8; x++) {
@@ -258,16 +256,43 @@ int Board::score(Side side)
     return score;
 }
 
+void Board::printBoard() {
+        cerr << "board is: \n";
+        for (int y = 0; y < 8; y++) {
+        cerr << "-----------------\n";
+            for (int x = 0; x < 8; x++) {
+                cerr << "|";
+                if (get(WHITE, x, y)) {
+                    cerr << "W";
+                } else if (get(BLACK, x, y)) {
+                    cerr << "B";
+                } else if (black_moves & getSinglePosition(x, y)) {
+                    cerr << "^";
+                } else if (white_moves & getSinglePosition(x, y)) {
+                    cerr << "*";
+                } else
+                    cerr << " ";
+            }
+            cerr << "|\n";
+        }
+        cerr << "-----------------\n\n";
+}
+
 /*
  * Sets the board state given an 8x8 char array where 'w' indicates a white
  * piece and 'b' indicates a black piece. Mainly for testing purposes.
  */
 void Board::setBoard(char data[]) {
+    black = 0;
+    white = 0;
+    black_moves = 0;
+    white_moves = 0;
+
     for (int i = 0; i < 64; i++) {
         if (data[i] == 'b') {
-            set(BLACK, i / 8, i % 8);
+            set(BLACK, i % 8, i / 8);
         } if (data[i] == 'w') {
-            set(WHITE, i / 8, i % 8);
+            set(WHITE, i % 8, i / 8);
         }
     }
 

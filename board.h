@@ -18,6 +18,7 @@ private:
 public:
     // The board is initialized to the bitmaps that signify the starting positions.
     Board() : black(34628173824), white(68853694464) { generateMoves(); };
+    Board(const Board&) = default;
     ~Board() = default;
     Board* copy();
     Board* copyDoMove(Move* m, Side side);
@@ -33,6 +34,7 @@ public:
     int score(Side side);
 
     void setBoard(char data[]);
+    void printBoard();
 };
 
 #endif

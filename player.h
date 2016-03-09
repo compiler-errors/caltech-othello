@@ -7,18 +7,18 @@
 using namespace std;
 
 class Player {
-
 public:
     Player(Side s);
     ~Player();
 
     Move *doMove(Move *opponentsMove, int msLeft);
     Move getBestMove();
+    int naiveMinimax(Board* current, Side side, int depth, bool max);
 
     // Flag to tell if the player is running within the test_minimax context
     bool testingMinimax;
 
-private:
+public:
     Board *board;
     Side side, opponentSide;
 };
