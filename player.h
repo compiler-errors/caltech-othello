@@ -20,7 +20,7 @@ public:
 
 public:
     Board *board;
-    Side side, opponentSide;
+    Side ourSide, opponentSide;
 };
 
 #endif

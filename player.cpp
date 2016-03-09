@@ -8,7 +8,7 @@
 Player::Player(Side s) {
     testingMinimax = false;
     board = new Board();
-    side = s;
+    ourSide = s;
     opponentSide = (s == BLACK ? WHITE : BLACK);
 }
 
@@ -39,7 +39,7 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
     }
 
     Move best = getBestMove();
-    board->doMove(&best, side);
+    board->doMove(&best, ourSide);
     Move *move = new Move(best);
     //cerr << "Our score is " << board->score(side) << "\n";
     //cerr << "White is " << board->count(WHITE) << ", Black is " << board->count(BLACK) << "\n";
@@ -61,14 +61,14 @@ Move Player::getBestMove()
     for (int x = 0; x < 8; x++) {
         for (int y = 0; y < 8; y++) {
             Move move(x, y);
-            if (!board->checkMove(&move, side))
+            if (!board->checkMove(&move, ourSide))
                 continue;
 
             //board->printBoard();
 
-            Board* copy = board->copyDoMove(&move, side);
+            Board* copy = board->copyDoMove(&move, ourSide);
             //copy->printBoard();
-            int score = naiveMinimax(copy, OPPOSITE(side), 3, false);
+            int score = naiveMinimax(copy, opponentSide, testingMinimax ? 1 : 3, false);
             cerr << "Score for the move " << x << ", " << y << " is " << score << '\n';
             delete copy;
 
@@ -84,23 +84,27 @@ Move Player::getBestMove()
 
 
 
-int Player::naiveMinimax(Board* current, Side side, int depth, bool max) {
-    if (depth == 0 || current->isDone())
-        return current->score(this->side);
+int Player::naiveMinimax(Board* current, Side player, int depth, bool max) {
+    if (depth == 0 || current->isDone()) {
+        if (testingMinimax)
+            return current->count(ourSide) - current->count(opponentSide);
+        else
+            return current->score(ourSide);
+    }
 
-    if (!current->hasMoves(side))
-        return naiveMinimax(current, OPPOSITE(side), depth - 1, !max);
+    if (!current->hasMoves(player))
+        return naiveMinimax(current, OPPOSITE(player), depth - 1, !max);
 
     if (max) {
         int bestScore = INT_MIN;
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
                 Move move(x, y);
-                if (!current->checkMove(&move, side))
+                if (!current->checkMove(&move, player))
                     continue;
 
-                Board* copy = current->copyDoMove(&move, side);
-                int score = naiveMinimax(copy, OPPOSITE(side), depth - 1, !max);
+                Board* copy = current->copyDoMove(&move, player);
+                int score = naiveMinimax(copy, OPPOSITE(player), depth - 1, !max);
                 delete copy;
 
                 if (score > bestScore)
@@ -113,11 +117,11 @@ int Player::naiveMinimax(Board* current, Side side, int depth, bool max) {
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
                 Move move(x, y);
-                if (!current->checkMove(&move, side))
+                if (!current->checkMove(&move, player))
                     continue;
 
-                Board* copy = current->copyDoMove(&move, side);
-                int score = naiveMinimax(copy, OPPOSITE(side), depth - 1, !max);
+                Board* copy = current->copyDoMove(&move, player);
+                int score = naiveMinimax(copy, OPPOSITE(player), depth - 1, !max);
                 delete copy;
 
                 if (score < worstScore)

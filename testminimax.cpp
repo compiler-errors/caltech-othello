@@ -11,12 +11,12 @@ int main(int argc, char *argv[]) {
     // this, but it's provided for convenience.
     char boardData[64] = {
         ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 
-        ' ', 'b', ' ', ' ', ' ', ' ', ' ', ' ', 
-        'b', 'w', 'b', 'b', 'b', 'b', ' ', ' ', 
-        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 
-        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 
-        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+        ' ', 'b', ' ', ' ', ' ', ' ', ' ', ' ',
+        'b', 'w', 'b', 'b', 'b', 'b', ' ', ' ',
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
         ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '
     };
     Board *board = new Board();
@@ -25,10 +25,11 @@ int main(int argc, char *argv[]) {
     // Initialize player as the white player, and set testing_minimax flag.
     Player *player = new Player(WHITE);
     player->testingMinimax = true;
+    player->board = board;
 
 
-    /** 
-     * TODO: Write code to set your player's internal board state to the 
+    /**
+     * TODO: Write code to set your player's internal board state to the
      * example state.
      */
 
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
     Move *move = player->doMove(NULL, 0);
 
     if (move != NULL && move->x == 1 && move->y == 1) {
-        printf("Correct move: (1, 1)");
+        printf("Correct move: (1, 1)\n");
     } else {
         printf("Wrong move: got ");
         if (move == NULL) {
