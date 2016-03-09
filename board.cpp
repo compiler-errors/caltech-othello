@@ -107,8 +107,8 @@ bool Board::checkMove(Move *m, Side side) {
 uint64_t Board::doDirection(int x, int y, Side side, uint64_t(*shift)(uint64_t)) {
     uint64_t m = getSinglePosition(x, y);
     uint64_t changed = m;
-    uint64_t otherBoard = (side == BLACK ? white : black);
     uint64_t ourBoard = (side == BLACK ? black : white);
+    uint64_t otherBoard = (side == BLACK ? white : black);
 
     //Keep shifting 'm' until we are no longer over a white piece
     //tracking the change on "changed".
