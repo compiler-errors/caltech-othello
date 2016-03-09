@@ -224,12 +224,12 @@ int Board::countWhite() {
 
 int heuristicMatrix[8][8] =
 {{ 5,-2, 2, 2, 2, 2,-2, 5 },
- {-2, 1, 1, 1, 1, 1, 1,-2 },
+ {-2,-5, 1, 1, 1, 1,-5,-2 },
  { 2, 1, 1, 1, 1, 1, 1, 2 },
  { 2, 1, 1, 1, 1, 1, 1, 2 },
  { 2, 1, 1, 1, 1, 1, 1, 2 },
  { 2, 1, 1, 1, 1, 1, 1, 2 },
- {-2, 1, 1, 1, 1, 1, 1,-2 },
+ {-2,-5, 1, 1, 1, 1,-5,-2 },
  { 5,-2, 2, 2, 2, 2,-2, 5 }};
 
 /*
@@ -248,11 +248,10 @@ int Board::score(Side side)
         for (int y = 0; y < 8; y++) {
             if (get(side, x, y))
                 score += heuristicMatrix[x][y];
-            else if (occupied(x, y)) //Therefore the other guy has to own it.
+            else if (occupied(x, y)) // Therefore the other guy has to own it.
                 score -= heuristicMatrix[x][y];
         }
     }
-
     return score;
 }
 
