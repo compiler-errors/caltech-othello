@@ -2,6 +2,8 @@
 *.gch
 *.pch
 *.o
+callgrind.*
 
 TVMA
 testgame
+testminimax

@@ -9,7 +9,7 @@ Player::Player(Side s) {
     testingMinimax = false;
     board = new Board();
     ourSide = s;
-    opponentSide = (s == BLACK ? WHITE : BLACK);
+    opponentSide = (OPPOSITE(s));
 }
 
 /*
@@ -58,7 +58,7 @@ Move Player::getBestMove()
     if (testingMinimax) {
         naiveMinimax(board, ourSide, 2, true, bestMove);
     } else {
-        naiveMinimax(board, ourSide, 6, true, bestMove);
+        naiveMinimax(board, ourSide, 4, true, bestMove);
     }
     return bestMove;
 }
