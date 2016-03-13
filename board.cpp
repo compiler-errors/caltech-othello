@@ -1,15 +1,7 @@
 #include "board.h"
+#include "constants.h"
 
-//Functions thanks to:
-//http://www.gamedev.net/topic/646988-generating-moves-in-reversi/
-inline constexpr uint64_t NORTH(uint64_t x) { return (x << 8); }
-inline constexpr uint64_t SOUTH(uint64_t x) { return (x >> 8); }
-inline constexpr uint64_t EAST(uint64_t x) { return ((x & 0xfefefefefefefefeull) >> 1); }
-inline constexpr uint64_t WEST(uint64_t x) { return ((x & 0x7f7f7f7f7f7f7f7full) << 1); }
-inline constexpr uint64_t NOREAST(uint64_t x) { return NORTH(EAST(x)); }
-inline constexpr uint64_t SOUEAST(uint64_t x) { return SOUTH(EAST(x)); }
-inline constexpr uint64_t NORWEST(uint64_t x) { return NORTH(WEST(x)); }
-inline constexpr uint64_t SOUWEST(uint64_t x) { return SOUTH(WEST(x)); }
+#define COMBINE(a, b) ((a + b) == 0 ? (0.0) : (100*(a-b)*1.0/(a+b)))
 
 /*
  * Generates possible moves for pieces of the bitboard 'own' in the direction
@@ -30,9 +22,65 @@ inline uint64_t generateMove(uint64_t(*shift)(uint64_t), uint64_t own, uint64_t 
     return shift(possible) & empty; //now which adjacent pieces are empty?
 }
 
-/* Returns a bitboard with a single 1 at position (x, y) */
-inline constexpr uint64_t getSinglePosition(int x, int y) {
-    return (0x8000000000000000ull >> (8 * y)) >> x;
+#define IS_STABLE(pos) (!(pos) || ((pos) & stablePieces))
+
+inline uint64_t Board::generateStablePieces(Side side) {
+    uint64_t ourBoard = (side == WHITE ? white : black);
+    if (!(ourBoard & all_corners)) //Stable pieces cannot exist w/o corners.
+        return 0ull;
+
+    //we begin by finding the row,column,diagonal-locked stable pieces
+    uint64_t board = white | black;
+    uint64_t locked_rows = 0, locked_columns = 0;
+    for (int i = 0; i < 8; i++) {
+        if ((board & rows[i]) == rows[i])
+            locked_rows |= rows[i];
+        if ((board & columns[i]) == columns[i])
+            locked_columns |= columns[i];
+    }
+
+    uint64_t locked_diag = 0, locked_antidiag = 0;
+    for (int i = 0; i < 15; i++) {
+        if ((board & diagonals[i]) == diagonals[i])
+            locked_diag |= diagonals[i];
+        if ((board & anti_diagonals[i]) == anti_diagonals[i])
+            locked_antidiag |= anti_diagonals[i];
+    }
+
+    uint64_t stablePieces = (side == WHITE ? white_stables : black_stables);
+    stablePieces |= ourBoard & locked_rows & locked_columns & locked_diag & locked_antidiag;
+    stablePieces |= (ourBoard & all_corners);
+
+    for (int i = 0; i < 8; i++) {
+        bool newstable = false;
+
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                uint64_t pos = getSinglePosition(x, y);
+                //cerr << x << ", " << y << " and our board is " << ((pos & ourBoard) == 0 ? "FALSE " : "TRUE") << "\n";
+                if ((pos & stablePieces) || !(pos & ourBoard))
+                    continue;
+
+                uint64_t n = NORTH(pos), s = SOUTH(pos),
+                         e = EAST(pos), w = WEST(pos),
+                         ne = NOREAST(pos), se = SOUEAST(pos),
+                         nw = NORWEST(pos), sw = SOUWEST(pos);
+
+                if ((IS_STABLE(n) || IS_STABLE(s) || (pos & locked_columns)) &&
+                    (IS_STABLE(e) || IS_STABLE(w) || (pos & locked_rows)) &&
+                    (IS_STABLE(ne) || IS_STABLE(sw) || (pos & locked_diag)) &&
+                    (IS_STABLE(nw) || IS_STABLE(se) || (pos & locked_antidiag))) {
+                    stablePieces |= pos;
+                    newstable = true;
+                }
+            }
+        }
+
+        if (!newstable)
+            break;
+    }
+
+    return stablePieces;
 }
 
 /*
@@ -79,6 +127,9 @@ void Board::generateMoves() {
                 | generateMove(SOUEAST, white, black)
                 | generateMove(NORWEST, white, black)
                 | generateMove(SOUWEST, white, black);
+
+    black_stables = generateStablePieces(BLACK);
+    white_stables = generateStablePieces(WHITE);
 }
 
 /*
@@ -218,41 +269,62 @@ int Board::countWhite() {
 }
 
 /*
- * This matrix essentially represents the score of owning this position.
- */
-
-
-int heuristicMatrix[8][8] =
-{{ 5,-2, 2, 2, 2, 2,-2, 5 },
- {-2,-5, 1, 1, 1, 1,-5,-2 },
- { 2, 1, 1, 1, 1, 1, 1, 2 },
- { 2, 1, 1, 1, 1, 1, 1, 2 },
- { 2, 1, 1, 1, 1, 1, 1, 2 },
- { 2, 1, 1, 1, 1, 1, 1, 2 },
- {-2,-5, 1, 1, 1, 1,-5,-2 },
- { 5,-2, 2, 2, 2, 2,-2, 5 }};
-
-/*
  * Determines the number of occupied spaces that are corners (very good, x5),
  * edges (good, x2), adjacent to corners (bad, x(-2)), and diagonal to corners
  * (very bad, x(-5)). These modifiers are applied to compute the final score of
  * a position.
  */
-int Board::score(Side side)
+int Board::score(Side side, int elapsedMoves)
 {
-    //TODO: We should have a bad heuristic for "losing"
+    if (isDone()) {
+        if (count(side) > count(OPPOSITE(side))) {
+            return INT_MAX - 1;
+        } else
+            return -(INT_MAX - 1);
+    }
 
-    int score = 0;
+    //It is significantly easier to calculate the score as if it were always white
+    //and then simply flipping the score if we are instead calculating for black.
+    int whiteCoins = 0, blackCoins = 0;
+    int whiteMoves = 0, blackMoves = 0;
+    int whiteUtility = 0, blackUtility = 0;
+    int whiteStables = 0, blackStables = 0;
 
     for (int x = 0; x < 8; x++) {
         for (int y = 0; y < 8; y++) {
-            if (get(side, x, y))
-                score += heuristicMatrix[x][y];
-            else if (occupied(x, y)) // Therefore the other guy has to own it.
-                score -= heuristicMatrix[x][y];
+            uint64_t pos = getSinglePosition(x, y);
+            if (white & pos) {
+                whiteCoins++;
+                whiteUtility += utilityMatrix[x][y];
+                if (pos & white_stables)
+                    whiteStables++;
+            } else if (black & pos) {
+                blackCoins++;
+                blackUtility += utilityMatrix[x][y];
+                if (pos & black_stables)
+                    blackStables++;
+            } else {
+                if (white_moves & pos)
+                    whiteMoves++;
+                if (black_moves & pos) // NOT 'else', since they can both have it.
+                    blackMoves++;
+            }
         }
     }
-    return score;
+
+    float coinParity = COMBINE(whiteCoins, blackCoins);
+    float moveParity = COMBINE(whiteMoves, blackMoves);
+    float utilityParity = COMBINE(whiteUtility, blackUtility);
+    float stableParity = COMBINE(whiteStables, blackStables);
+    int finalScore = 0;
+
+    if (elapsedMoves < 40 && (whiteCoins + blackCoins < 50)) {
+        finalScore = 100 * (utilityParity * 0.3 + stableParity * 0.5 + moveParity * 0.15 + coinParity * 0.05);
+    } else {
+        finalScore = 100 * (coinParity * 0.3 + stableParity * 0.7);
+    }
+
+    return (side == WHITE ? finalScore : -finalScore);
 }
 
 void Board::printBoard() {
@@ -261,10 +333,15 @@ void Board::printBoard() {
         cerr << "-----------------\n";
             for (int x = 0; x < 8; x++) {
                 cerr << "|";
-                if (get(WHITE, x, y)) {
+                uint64_t pos = getSinglePosition(x, y);
+                if (pos & white_stables) { //TODO: make prettier
                     cerr << "W";
-                } else if (get(BLACK, x, y)) {
+                } else if (pos & black_stables) {
                     cerr << "B";
+                } else if (get(WHITE, x, y)) {
+                    cerr << "w";
+                } else if (get(BLACK, x, y)) {
+                    cerr << "b";
                 } else if (black_moves & getSinglePosition(x, y)) {
                     cerr << "^";
                 } else if (white_moves & getSinglePosition(x, y)) {
@@ -286,6 +363,7 @@ void Board::setBoard(char data[]) {
     white = 0;
     black_moves = 0;
     white_moves = 0;
+
 
     for (int i = 0; i < 64; i++) {
         if (data[i] == 'b') {

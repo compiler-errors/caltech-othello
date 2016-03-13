@@ -5,15 +5,17 @@
 using namespace std;
 
 class Board {
-private:
+public:
     uint64_t black, white;
     uint64_t black_moves, white_moves;
+    uint64_t black_stables, white_stables;
 
     bool occupied(int x, int y);
     bool get(Side side, int x, int y);
     void set(Side side, int x, int y);
     void generateMoves();
     uint64_t doDirection(int x, int y, Side side, uint64_t(*shift)(uint64_t));
+    uint64_t generateStablePieces(Side side);
 
 public:
     // The board is initialized to the bitmaps that signify the starting positions.
@@ -31,7 +33,7 @@ public:
     int count(Side side);
     int countBlack();
     int countWhite();
-    int score(Side side);
+    int score(Side side, int elapsedMoves);
 
     void setBoard(char data[]);
     void printBoard();

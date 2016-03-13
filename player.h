@@ -13,7 +13,7 @@ public:
 
     Move *doMove(Move *opponentsMove, int msLeft);
     Move getBestMove();
-    int naiveMinimax(Board* current, Side side, int depth, bool max, Move& bestMove);
+    int naiveMinimax(Board* current, Side side, int depth, bool max, Move& bestMove, int elapsedMoves);
 
     // Flag to tell if the player is running within the test_minimax context
     bool testingMinimax;
@@ -21,6 +21,7 @@ public:
 public:
     Board *board;
     Side ourSide, opponentSide;
+    int elapsed_moves;
 };
 
 #endif
