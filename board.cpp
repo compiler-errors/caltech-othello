@@ -5,7 +5,7 @@
 
 /*
  * Generates possible moves for pieces of the bitboard 'own' in the direction
- * given by the function pointer shift().
+ * given by the function pointer shift
  * My hope here is that GCC will inline the function pointer and essentially
  * unroll all 8 calls to generateMove() for each direction
  */

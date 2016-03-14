@@ -61,7 +61,7 @@ Move Player::getBestMove()
     if (!finalMode && (elapsed_moves > 45 || board->countBlack() + board->countWhite() > 45))
         finalMode = true;
 
-    if (finalMode) {
+    /*if (finalMode) {
         //essentially memoize and STORE the memo. go a crazy depth.
         Move bestMove(-1, -1);
         naiveMinimax(board, ourSide, 6, true, bestMove, elapsed_moves);
@@ -71,10 +71,54 @@ Move Player::getBestMove()
         Move bestMove(-1, -1);
         naiveMinimax(board, ourSide, 6, true, bestMove, elapsed_moves);
         return bestMove;
-    }
+    }*/
+
+    board->printBoard();
+    Move bestMove(-1, -1);
+    negamax(board, ourSide, 6, -(INT_MAX - 1), (INT_MAX - 1), elapsed_moves, bestMove);
+    return bestMove;
 }
 
+/*
+ * Calculates highest-scoring move using a negamax algorithm to arbitrary depth.
+ */
+int Player::negamax(Board *current, Side player, int depth, int a, int b, int elapsedMoves, Move &ret)
+{
+    if (depth == 0 || current->isDone())
+        return current->score(ourSide, elapsedMoves);
 
+    Move dummy(-1, -1);
+
+    if (!current->hasMoves(player))
+        return -negamax(current, OPPOSITE(player), depth - 1, -b, -a, \
+                elapsedMoves + 1, dummy);
+
+    Move best(-1, -1);
+    for (int x = 0; x < 8; x++)
+    {
+        for (int y = 0; y < 0; y++)
+        {
+            Move move(x, y);
+            if (!current->checkMove(&move, player))
+                continue;
+
+            Board *copy = current->copyDoMove(&move, player);
+            int score = -negamax(copy, OPPOSITE(player), depth - 1, -b, -a, \
+                    elapsedMoves + 1, dummy);
+            delete copy;
+
+            if (score > a)
+            {
+                best = move;
+                a = score;
+            }
+            if (score >= b) // no longer worth pursuing branch
+                return score;
+        }
+    }
+    ret = best;
+    return a;
+}
 
 int Player::naiveMinimax(Board* current, Side player, int depth, bool max, Move& returnMove, int elapsedMoves) {
     if (depth == 0 || current->isDone()) {
