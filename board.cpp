@@ -314,14 +314,14 @@ int Board::score(Side side, int elapsedMoves)
 
     float coinParity = COMBINE(whiteCoins, blackCoins);
     float moveParity = COMBINE(whiteMoves, blackMoves);
-    float utilityParity = COMBINE(whiteUtility, blackUtility);
+    float utilityParity = 100 * (whiteUtility - blackUtility);
     float stableParity = COMBINE(whiteStables, blackStables);
     int finalScore = 0;
 
     if (elapsedMoves < 40 && (whiteCoins + blackCoins < 50)) {
-        finalScore = 100 * (utilityParity * 0.3 + stableParity * 0.5 + moveParity * 0.15 + coinParity * 0.05);
+        finalScore = 100 * (utilityParity * 0.45 + moveParity * 0.4 - coinParity * 0.15 + stableParity * 0.8);
     } else {
-        finalScore = 100 * (coinParity * 0.3 + stableParity * 0.7);
+        finalScore = 100 * (coinParity * 0.1 + stableParity * 1.2 + moveParity * 0.5);
     }
 
     return (side == WHITE ? finalScore : -finalScore);

@@ -22,6 +22,7 @@ public:
     Board *board;
     Side ourSide, opponentSide;
     int elapsed_moves;
+    bool finalMode;
 };
 
 #endif

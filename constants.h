@@ -11,6 +11,7 @@ inline constexpr uint64_t SOUEAST(uint64_t x) { return SOUTH(EAST(x)); }
 inline constexpr uint64_t NORWEST(uint64_t x) { return NORTH(WEST(x)); }
 inline constexpr uint64_t SOUWEST(uint64_t x) { return SOUTH(WEST(x)); }
 
+// A bitboard for each diagonal on the board.
 uint64_t diagonals[] = {
     9223372036854775808ull,
     4647714815446351872ull,
@@ -29,6 +30,7 @@ uint64_t diagonals[] = {
     1ull
 };
 
+// A bitboard for every top-right-to-bottom-left diagonal on the board
 uint64_t anti_diagonals[] = {
     72057594037927936ull,
     144396663052566528ull,
@@ -47,6 +49,7 @@ uint64_t anti_diagonals[] = {
     128ull
 };
 
+//A bitboard for every row
 uint64_t rows[] = {
     18374686479671623680ull,
     71776119061217280ull,
@@ -69,11 +72,18 @@ uint64_t columns[] = {
     72340172838076673ull
 };
 
+// A bitboard with all four corners marked
 uint64_t all_corners = getSinglePosition(0, 0)
                      | getSinglePosition(0, 7)
                      | getSinglePosition(7, 0)
                      | getSinglePosition(7, 7);
 
+// A modified matrix from the old one,
+// This matrix only characterizes the specific utility of each piece
+// Thus, most pieces in the middle are "0" since they are useless.
+// However, corners are VERY useful, and therefore weighted 50.
+// This is a good metric that approximates the "corner heuristic" for
+// other engines. 
 int utilityMatrix[8][8] =
 {{50,-2, 2, 2, 2, 2,-2, 50},
  {-2,-9, 0, 0, 0, 0,-9,-2 },

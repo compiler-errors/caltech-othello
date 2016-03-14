@@ -11,12 +11,14 @@ Player::Player(Side s) {
     ourSide = s;
     opponentSide = (OPPOSITE(s));
     elapsed_moves = 0;
+    finalMode = false;
 }
 
 /*
  * Destructor for the player.
  */
 Player::~Player() {
+    delete board;
 }
 
 /*
@@ -56,10 +58,20 @@ Move *Player::doMove(Move *opponentsMove, int msLeft) {
  */
 Move Player::getBestMove()
 {
-    board->printBoard();
-    Move bestMove(-1, -1);
-    naiveMinimax(board, ourSide, 8, true, bestMove, elapsed_moves);
-    return bestMove;
+    if (!finalMode && (elapsed_moves > 45 || board->countBlack() + board->countWhite() > 45))
+        finalMode = true;
+
+    if (finalMode) {
+        //essentially memoize and STORE the memo. go a crazy depth.
+        Move bestMove(-1, -1);
+        naiveMinimax(board, ourSide, 6, true, bestMove, elapsed_moves);
+        return bestMove;
+    } else {
+        board->printBoard();
+        Move bestMove(-1, -1);
+        naiveMinimax(board, ourSide, 6, true, bestMove, elapsed_moves);
+        return bestMove;
+    }
 }
 
 
