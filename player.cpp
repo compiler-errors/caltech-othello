@@ -90,33 +90,35 @@ int Player::negamax(Board *current, Side player, int depth, int a, int b, int el
     Move dummy(-1, -1);
 
     if (!current->hasMoves(player))
-        return -negamax(current, OPPOSITE(player), depth - 1, -b, -a, \
+        return -negamax(current, OPPOSITE(player), depth - 1, -b, -a,
                 elapsedMoves + 1, dummy);
 
-    Move best(-1, -1);
     for (int x = 0; x < 8; x++)
     {
-        for (int y = 0; y < 0; y++)
+        for (int y = 0; y < 8; y++)
         {
             Move move(x, y);
             if (!current->checkMove(&move, player))
                 continue;
 
             Board *copy = current->copyDoMove(&move, player);
-            int score = -negamax(copy, OPPOSITE(player), depth - 1, -b, -a, \
+            int score = -negamax(copy, OPPOSITE(player), depth - 1, -b, -a,
                     elapsedMoves + 1, dummy);
+            if (depth == 6) {
+                cerr << "The score for the move " << x << ", " << y << " is " << score << "\n";
+            }
             delete copy;
 
             if (score > a)
             {
-                best = move;
+                ret = move;
                 a = score;
             }
             if (score >= b) // no longer worth pursuing branch
                 return score;
         }
     }
-    ret = best;
+
     return a;
 }
 
