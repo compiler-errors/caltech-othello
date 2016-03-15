@@ -269,10 +269,7 @@ int Board::countWhite() {
 }
 
 /*
- * Determines the number of occupied spaces that are corners (very good, x5),
- * edges (good, x2), adjacent to corners (bad, x(-2)), and diagonal to corners
- * (very bad, x(-5)). These modifiers are applied to compute the final score of
- * a position.
+ * Returns the strategic value of a board position.
  */
 int Board::score(Side side, int elapsedMoves)
 {
@@ -314,17 +311,21 @@ int Board::score(Side side, int elapsedMoves)
 
     float coinParity = COMBINE(whiteCoins, blackCoins);
     float moveParity = COMBINE(whiteMoves, blackMoves);
-    float utilityParity = 100 * (whiteUtility - blackUtility);
+    float utilityParity = (whiteUtility - blackUtility)*10;
     float stableParity = COMBINE(whiteStables, blackStables);
-    int finalScore = 0;
+    float finalScore = 0;
 
-    if (elapsedMoves < 40 && (whiteCoins + blackCoins < 50)) {
-        finalScore = 100 * (utilityParity * 0.45 + moveParity * 0.4 - coinParity * 0.15 + stableParity * 0.8);
+    if (elapsedMoves < 20) {
+        finalScore = 100 * (utilityParity * 0.55 + moveParity * 0.5 + coinParity * 0.05) / (0.55 + 0.5 + 0.05);
+    } else if (elapsedMoves < 30) {
+        finalScore = 100 * (utilityParity * 0.55 + moveParity * 0.5 - coinParity * 0.05 + stableParity * 0.3) / (1.3);
+    } else if (elapsedMoves < 40) {
+        finalScore = 100 * (utilityParity * 0.55 + moveParity * 0.5 - coinParity * 0.05 + stableParity * 0.4) / (1.4);
     } else {
-        finalScore = 100 * (coinParity * 0.1 + stableParity * 1.2 + moveParity * 0.5);
+        finalScore = 100 * (utilityParity * 0.4 + moveParity * 0.2 + coinParity * 0.15 + stableParity * 0.5) / (0.4 + 0.5 + 0.15 + 0.8);
     }
 
-    return (side == WHITE ? finalScore : -finalScore);
+    return (int) (side == WHITE ? finalScore : -finalScore);
 }
 
 void Board::printBoard() {

@@ -11,13 +11,13 @@ int main(int argc, char *argv[]) {
     // this, but it's provided for convenience.
     char boardData[64] = {
         ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-        ' ', 'b', ' ', ' ', ' ', ' ', ' ', ' ',
-        'b', 'w', 'b', 'b', 'b', 'b', ' ', ' ',
-        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-        ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '
+        ' ', ' ', ' ', ' ', ' ', 'w', ' ', ' ',
+        'b', ' ', 'w', 'w', 'w', 'w', 'w', ' ',
+        'w', 'b', 'w', 'w', 'b', 'w', ' ', ' ',
+        ' ', 'b', 'b', 'b', 'w', ' ', 'w', ' ',
+        'b', 'b', 'b', 'w', 'w', 'w', ' ', ' ',
+        ' ', ' ', 'b', 'w', ' ', ' ', ' ', ' ',
+        ' ', ' ', 'b', ' ', ' ', ' ', ' ', ' '
     };
     Board *board = new Board();
     board->setBoard(boardData);
@@ -35,18 +35,4 @@ int main(int argc, char *argv[]) {
 
     // Get player's move and check if it's right.
     Move *move = player->doMove(NULL, 0);
-
-    if (move != NULL && move->x == 1 && move->y == 1) {
-        printf("Correct move: (1, 1)\n");
-    } else {
-        printf("Wrong move: got ");
-        if (move == NULL) {
-            printf("PASS");
-        } else {
-            printf("(%d, %d)", move->x, move->y);
-        }
-        printf(", expected (1, 1)\n");
-    }
-
-    return 0;
 }

@@ -1,5 +1,5 @@
 CC          = g++
-CFLAGS      = -Wall -ansi -pedantic -ggdb --std=c++11 -O2
+CFLAGS      = -Wall -ansi -ggdb -pedantic --std=c++11 -O3
 OBJS        = player.o board.o
 PLAYERNAME  = TVMA
 

@@ -15,8 +15,8 @@ enum Side {
 class Move {
 public:
     int8_t x, y;
+    Move() = default;
     Move(int x, int y) : x(x), y(y) {};
-    Move(const Move&) = default;
     ~Move() = default;
 
     inline int getX() { return x; }
